@@ -56,6 +56,7 @@
  */
 #ifdef USE_SDL2
 #include "SDL_main.h"
+#include "SDL_filesystem.h"
 #endif
 
 /**
@@ -134,6 +135,13 @@ static void quit_hook(const char *s)
  */
 static void init_stuff(void)
 {
+#ifdef __APPLE__
+	char libpath[512];
+	char *configpath = SDL_GetPrefPath("Angband", "FAAngband");
+	my_strcpy(libpath, SDL_GetBasePath(), sizeof(libpath));
+	my_strcat(libpath, "/lib", sizeof(libpath));
+	char *datapath = SDL_GetPrefPath("Angband", "FAAngband");
+#else
 	char configpath[512];
 	char libpath[512];
 	char datapath[512];
@@ -142,7 +150,7 @@ static void init_stuff(void)
 	my_strcpy(configpath, DEFAULT_CONFIG_PATH, sizeof(configpath));
 	my_strcpy(libpath, DEFAULT_LIB_PATH, sizeof(libpath));
 	my_strcpy(datapath, DEFAULT_DATA_PATH, sizeof(datapath));
-
+#endif // __APPLE__
 	/* Make sure they're terminated */
 	configpath[511] = '\0';
 	libpath[511] = '\0';
@@ -321,6 +329,9 @@ int main(int argc, char *argv[])
 {
 	int i;
 	bool new_game = false, select_game = false;
+#ifdef __APPLE__
+	select_game = true;
+#endif
 	bool done = false;
 
 	const char *mstr = NULL;

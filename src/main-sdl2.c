@@ -25,6 +25,7 @@
 #include "sdl2/pui-misc.h"
 #include "sdl2/pui-win.h"
 #include "SDL_image.h"
+#include "SDL_keyboard.h"
 #ifdef SOUND_SDL2
 #include "SDL_mixer.h"
 #endif
@@ -93,7 +94,7 @@
 	ANGBAND_DIR_ICONS
 
 #define DEFAULT_FONT_HINTING \
-	TTF_HINTING_LIGHT
+	TTF_HINTING_LIGHT_SUBPIXEL
 /* border of subwindows, in pixels */
 #define DEFAULT_BORDER 8
 #define DEFAULT_XTRA_BORDER \
@@ -103,7 +104,7 @@
 /* XXX hack: the widest character present in a font
  * for determining font advance (width) */
 #define GLYPH_FOR_ADVANCE 'W'
-#define DEFAULT_VECTOR_FONT_SIZE 12
+#define DEFAULT_VECTOR_FONT_SIZE 15
 
 #define DEFAULT_FONT "10x20x.fon"
 
@@ -475,6 +476,7 @@ struct my_app {
 
 /* Forward declarations */
 
+static void send_sdl_keylike_event(struct sdlpui_window *window, wchar_t commandish_char);
 static void init_globals(struct my_app *a);
 static void free_globals(struct my_app *a);
 static bool read_config_file(struct my_app *a);
@@ -3951,6 +3953,7 @@ static uint8_t translate_key_mods(Uint16 mods)
 static bool handle_mousebutton(struct my_app *a,
 		const SDL_MouseButtonEvent *mouse)
 {
+	struct sdlpui_window *window = get_window_by_id(a, mouse->windowID);
 	struct subwindow *subwindow;
 	int button, col, row;
 	uint8_t mods;
@@ -4071,6 +4074,13 @@ static bool handle_mousebutton(struct my_app *a,
 	old = Term;
 	Term_activate(subwindow->term);
 	Term_mousepress(col, row, button);
+	if (Term->send_char_clicked_as_keystroke)
+	{
+		int theint;
+		wchar_t thechar;
+		Term_what(col, row, &theint, &thechar);
+		send_sdl_keylike_event(window, thechar);
+	}
 	Term_activate(old);
 
 	return true;
@@ -4411,6 +4421,65 @@ static void keyboard_event_to_angband_key(const SDL_KeyboardEvent *key,
 			*mods &= ~KC_MOD_CONTROL;
 		}
 	}
+}
+
+static void send_sdl_keylike_event(struct sdlpui_window *window, wchar_t commandish_char)
+{
+	// Synthesize a text-input event and push it into SDL's event queue
+	SDL_Event syntheticEvent;
+	// ␛ ↑ ← ↓ →
+	if (commandish_char == L'⎋' ||
+		commandish_char == L'⮐' ||
+		commandish_char == L'⇥' ||
+		commandish_char == L'↑' ||
+		commandish_char == L'←' ||
+		commandish_char == L'↓' ||
+		commandish_char == L'→') {
+		SDL_KeyboardEvent ke;
+		SDL_Keycode kc;
+		if (commandish_char == L'↑') {
+			kc = SDLK_UP;
+		} else if (commandish_char == L'←') {
+			kc = SDLK_LEFT;
+		} else if (commandish_char == L'↓') {
+			kc = SDLK_DOWN;
+		} else if (commandish_char == L'→') {
+			kc = SDLK_RIGHT;
+		} else if (commandish_char == L'⎋') {
+			kc = SDLK_ESCAPE;
+		} else if (commandish_char == L'⮐') {
+			kc = SDLK_RETURN;
+		} else if (commandish_char == L'⇥') {
+			kc = SDLK_TAB;
+		}
+		SDL_Keysym keysym;
+		keysym.mod = 0;
+		keysym.sym = kc;
+		SDL_Scancode scancode;
+		keysym.scancode = SDL_SCANCODE_UNKNOWN;
+		keysym.unused = 0;
+		ke.keysym = keysym;
+		ke.type = SDL_KEYDOWN;
+		ke.timestamp = SDL_GetTicks();
+		ke.windowID = window->id;
+		ke.repeat = 0;
+		ke.state = SDL_PRESSED;
+		ke.padding2 = 0;
+		ke.padding3 = 0;
+		syntheticEvent.type = SDL_KEYDOWN;
+		syntheticEvent.key = ke;
+		} else {
+			SDL_TextInputEvent te;
+			te.type = SDL_TEXTINPUT;
+			te.timestamp = SDL_GetTicks();
+			te.windowID = window->id;
+			te.text[0] = commandish_char;
+			te.text[1] = '\0';
+			syntheticEvent.type = SDL_TEXTINPUT;
+			syntheticEvent.text = te;
+		}
+
+	SDL_PushEvent(&syntheticEvent);
 }
 
 static bool handle_key(struct my_app *a, const SDL_KeyboardEvent *key)
@@ -6156,6 +6225,9 @@ static void start_window(struct sdlpui_window *window)
 				window->stored_rect = tmp_rect;
 			}
 		}
+#ifdef __APPLE__
+		window->config->window_flags = window->config->window_flags | SDL_WINDOW_ALLOW_HIGHDPI;
+#endif
 		window->window = SDL_CreateWindow(VERSION_NAME,
 				window->full_rect.x, window->full_rect.y,
 				window->full_rect.w, window->full_rect.h,
@@ -6175,6 +6247,18 @@ static void start_window(struct sdlpui_window *window)
 	if (window->renderer == NULL) {
 		quit_fmt("cannot create renderer for window %u: %s",
 				window->index, SDL_GetError());
+	}
+	{
+		int rw = 0, rh = 0;
+		SDL_GetRendererOutputSize(window->renderer, &rw, &rh);
+		if(rw != window->full_rect.w) {
+			float widthScale = (float)rw / (float) window->full_rect.w;
+			float heightScale = (float)rh / (float) window->full_rect.h;
+			if(widthScale != heightScale) {
+				fprintf(stderr, "WARNING: width scale != height scale\n");
+			}
+			SDL_RenderSetScale(window->renderer, widthScale, heightScale);
+		}
 	}
 
 	SDL_RendererInfo info;
@@ -6285,7 +6369,7 @@ static void wipe_window(struct sdlpui_window *window, int display)
 	window->alpha = DEFAULT_ALPHA_FULL;
 
 	window->wallpaper.texture = NULL;
-	window->wallpaper.mode = WALLPAPER_TILED;
+	window->wallpaper.mode = WALLPAPER_DONT_SHOW;
 
 	window->stipple.texture = NULL;
 
@@ -6668,6 +6752,7 @@ static void load_term(struct subwindow *subwindow)
 	term *old = Term;
 	Term_activate(subwindow->term);
 	Term_redraw();
+	Term->send_char_clicked_as_keystroke = true;
 	Term_activate(old);
 
 	subwindow->linked = true;
@@ -7232,6 +7317,10 @@ static void init_globals(struct my_app *a)
 
 	path_build(a->config_file, sizeof(a->config_file),
 			DEFAULT_CONFIG_FILE_DIR, DEFAULT_CONFIG_FILE);
+	if(!file_exists(a->config_file)) {
+		path_build(a->config_file, sizeof(a->config_file),
+						   ANGBAND_DIR_PLATFORM, DEFAULT_CONFIG_FILE);
+	}
 
 	for (size_t i = 0; i < N_ELEMENTS(a->subwindows); i++) {
 		a->subwindows[i].index = i;
@@ -7398,6 +7487,14 @@ static void load_terms(struct my_app *a)
 static void dump_config_file(const struct my_app *a)
 {
 	ang_file *config = file_open(a->config_file, MODE_WRITE, FTYPE_TEXT);
+	if(config == NULL) {
+		// Compare to the two attempts to open the config file in init_globals.
+		// When the DEFAULT_CONFIG_FILE_DIR version is missing on launch, we read the one inside lib/ dir.
+		// Then we enter this block on exit. On future exits we won't enter this block.
+		path_build(a->config_file, sizeof(a->config_file),
+						DEFAULT_CONFIG_FILE_DIR, DEFAULT_CONFIG_FILE);
+		config = file_open(a->config_file, MODE_WRITE, FTYPE_TEXT);
+	}
 
 	assert(config != NULL);
 

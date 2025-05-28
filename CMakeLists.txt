@@ -2,13 +2,16 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5...3.26 FATAL_ERROR)
 PROJECT(FAngband LANGUAGES C)
 SET(OUR_EXECUTABLE_NAME ${PROJECT_NAME})
 
+LIST(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")
+SET(CURSES_INCLUDE_PATH "/Library/Developer/CommandLineTools/SDKs/MacOSX15.sdk/usr/include")
+
 # Append the custom modules to the search path.
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/modules")
 
-OPTION(SUPPORT_GCU_FRONTEND "Support for GCU front end." OFF)
-OPTION(SUPPORT_NCURSES_FRONTEND "Synonym for SUPPORT_GCU_FRONTEND for backwards compatibility." OFF)
+OPTION(SUPPORT_GCU_FRONTEND "Support for GCU front end." ON)
+OPTION(SUPPORT_NCURSES_FRONTEND "Synonym for SUPPORT_GCU_FRONTEND for backwards compatibility." ON)
 OPTION(SUPPORT_SDL_FRONTEND "Support for SDL front end." OFF)
-OPTION(SUPPORT_SDL2_FRONTEND "Support for SDL2 front end." OFF)
+OPTION(SUPPORT_SDL2_FRONTEND "Support for SDL2 front end." ON)
 OPTION(SUPPORT_X11_FRONTEND "Support for X11 Frontend." OFF)
 OPTION(SUPPORT_SDL_SOUND "Support for sound with SDL." OFF)
 OPTION(SUPPORT_SDL2_SOUND "Support for sound with SDL2." OFF)
