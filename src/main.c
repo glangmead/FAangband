@@ -493,7 +493,7 @@ int main(int argc, char *argv[])
 	if (mstr)
 		ANGBAND_SYS = mstr;
 #if !defined(WINDOWS) && !defined(DJGPP)
-	if (setlocale(LC_CTYPE, "")) {
+	if (setlocale(LC_CTYPE, "UTF-8")) {
 		/* Require UTF-8 */
 		if (!streq(nl_langinfo(CODESET), "UTF-8"))
 			quit("Angband requires UTF-8 support");
