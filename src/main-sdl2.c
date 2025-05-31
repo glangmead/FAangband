@@ -3665,7 +3665,11 @@ static void handle_last_resize_event(struct my_app *a, int num_events,
 			struct sdlpui_window *window =
 				get_window_by_id(a, event.windowID);
 			assert(window != NULL);
-			resize_window(window, event.data1, event.data2);
+			if (window->config->window_flags | SDL_WINDOW_ALLOW_HIGHDPI) {
+				resize_window(window, event.data1*2, event.data2*2);
+			} else {
+				resize_window(window, event.data1, event.data2);
+			}
 
 			return;
 		}
@@ -6251,13 +6255,14 @@ static void start_window(struct sdlpui_window *window)
 	{
 		int rw = 0, rh = 0;
 		SDL_GetRendererOutputSize(window->renderer, &rw, &rh);
+		SDL_RenderSetLogicalSize(window->renderer, rw, rh);
 		if(rw != window->full_rect.w) {
 			float widthScale = (float)rw / (float) window->full_rect.w;
 			float heightScale = (float)rh / (float) window->full_rect.h;
 			if(widthScale != heightScale) {
 				fprintf(stderr, "WARNING: width scale != height scale\n");
 			}
-			SDL_RenderSetScale(window->renderer, widthScale, heightScale);
+			// SDL_RenderSetScale(window->renderer, widthScale, heightScale);
 		}
 	}
 
