@@ -135,16 +135,17 @@ static void quit_hook(const char *s)
  */
 static void init_stuff(void)
 {
+    char configpath[512];
+    char datapath[512];
+    char libpath[512];
 #ifdef __APPLE__
-	char libpath[512];
-	char *configpath = SDL_GetPrefPath("Angband", "FAAngband");
-	my_strcpy(libpath, SDL_GetBasePath(), sizeof(libpath));
-	my_strcat(libpath, "/lib", sizeof(libpath));
-	char *datapath = SDL_GetPrefPath("Angband", "FAAngband");
+    my_strcpy(configpath, getenv("HOME"), sizeof(configpath));
+    my_strcpy(datapath, getenv("HOME"), sizeof(datapath));
+    my_strcat(datapath, "/Documents", sizeof(datapath));
+    my_strcat(configpath, "/Documents", sizeof(configpath));
+    my_strcpy(libpath, SDL_GetBasePath(), sizeof(libpath));
+    my_strcat(libpath, "/lib", sizeof(libpath));
 #else
-	char configpath[512];
-	char libpath[512];
-	char datapath[512];
 
 	/* Use the angband_path, or a default */
 	my_strcpy(configpath, DEFAULT_CONFIG_PATH, sizeof(configpath));
