@@ -743,6 +743,9 @@ void strunescape(char *s) {
 			case 'e':
 				*out++ = '\x1B';
 				break;
+			case '"':
+				*out++ = '"';
+				break;
 			case 'x': {
 				char hex[3];
 				if (*++in == 0) {

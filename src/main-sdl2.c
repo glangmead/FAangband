@@ -4433,7 +4433,9 @@ static void send_sdl_keylike_event(struct sdlpui_window *window, wchar_t command
 	SDL_Event syntheticEvent;
 	// ␛ ↑ ← ↓ →
 	if (commandish_char == L'⎋' ||
-		commandish_char == L'⮐' ||
+		commandish_char == L'⌫' ||
+		commandish_char == L'␣' ||
+		commandish_char == L'↵' ||
 		commandish_char == L'⇥' ||
 		commandish_char == L'↑' ||
 		commandish_char == L'←' ||
@@ -4449,9 +4451,13 @@ static void send_sdl_keylike_event(struct sdlpui_window *window, wchar_t command
 			kc = SDLK_DOWN;
 		} else if (commandish_char == L'→') {
 			kc = SDLK_RIGHT;
+		} else if (commandish_char == L'⌫') {
+			kc = SDLK_BACKSPACE;
+		} else if (commandish_char == L'␣') {
+			kc = SDLK_SPACE;
 		} else if (commandish_char == L'⎋') {
 			kc = SDLK_ESCAPE;
-		} else if (commandish_char == L'⮐') {
+		} else if (commandish_char == L'↵') {
 			kc = SDLK_RETURN;
 		} else if (commandish_char == L'⇥') {
 			kc = SDLK_TAB;
