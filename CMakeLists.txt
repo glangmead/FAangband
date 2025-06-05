@@ -2,16 +2,13 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.5...3.26 FATAL_ERROR)
 PROJECT(FAngband LANGUAGES C)
 SET(OUR_EXECUTABLE_NAME ${PROJECT_NAME})
 
-LIST(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")
-SET(CURSES_INCLUDE_PATH "/Library/Developer/CommandLineTools/SDKs/MacOSX15.sdk/usr/include")
-
 # Append the custom modules to the search path.
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/modules")
 
-OPTION(SUPPORT_GCU_FRONTEND "Support for GCU front end." ON)
-OPTION(SUPPORT_NCURSES_FRONTEND "Synonym for SUPPORT_GCU_FRONTEND for backwards compatibility." ON)
+OPTION(SUPPORT_GCU_FRONTEND "Support for GCU front end." OFF)
+OPTION(SUPPORT_NCURSES_FRONTEND "Synonym for SUPPORT_GCU_FRONTEND for backwards compatibility." OFF)
 OPTION(SUPPORT_SDL_FRONTEND "Support for SDL front end." OFF)
-OPTION(SUPPORT_SDL2_FRONTEND "Support for SDL2 front end." ON)
+OPTION(SUPPORT_SDL2_FRONTEND "Support for SDL2 front end." OFF)
 OPTION(SUPPORT_X11_FRONTEND "Support for X11 Frontend." OFF)
 OPTION(SUPPORT_SDL_SOUND "Support for sound with SDL." OFF)
 OPTION(SUPPORT_SDL2_SOUND "Support for sound with SDL2." OFF)
@@ -72,6 +69,38 @@ IF((NOT SUPPORT_GCU_FRONTEND) AND (NOT SUPPORT_SDL_FRONTEND) AND (NOT SUPPORT_SD
         SET(SUPPORT_X11_FRONTEND ON)
     ENDIF()
 ENDIF()
+
+if(IOS)
+    set(DEPLOYMENT_TARGET "18.5" CACHE STRING "")
+    set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "")
+    add_compile_definitions(USE_SDL2 GAMEDATA_IN_LIB)
+    set(RESOURCES
+            "os/ios/AppIcon.xcassets"
+            "os/ios/Media.xcassets"
+            "lib"
+    )
+
+    target_sources(${OUR_EXECUTABLE_NAME} PUBLIC ${RESOURCES})
+    set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+
+    set_target_properties(${OUR_EXECUTABLE_NAME} PROPERTIES
+            MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/os/ios/Info.plist"
+            XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "org.rephial.${OUR_EXECUTABLE_NAME}"
+            XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
+    )
+
+    set(MACOSX_BUNDLE_BUNDLE_NAME "${OUR_EXECUTABLE_NAME}")
+    set(MACOSX_BUNDLE_DISPLAY_NAME "${OUR_EXECUTABLE_NAME}")
+
+    install(TARGETS ${OUR_EXECUTABLE_NAME} DESTINATION "Payload")
+
+    set(CPACK_GENERATOR "ZIP")
+    set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
+    set(CPACK_PACKAGE_FILE_NAME "${OUR_EXECUTABLE_NAME}")
+    set(CPACK_ARCHIVE_FILE_EXTENSION "ipa")
+endif()
+
 # Can not have support for SDL and SDL2 at the same time.
 IF (SUPPORT_SDL2_FRONTEND OR SUPPORT_SDL2_SOUND)
     IF (SUPPORT_SDL_FRONTEND OR SUPPORT_SDL_SOUND)
@@ -337,6 +366,7 @@ ADD_EXECUTABLE(OurExecutable
         $<$<BOOL:${SUPPORT_STATS_FRONTEND}>:src/main-stats.c>
         $<$<BOOL:${SUPPORT_STATS_FRONTEND}>:src/stats/db.c>
         $<$<BOOL:${SUPPORT_TEST_FRONTEND}>:src/main-test.c>
+        $<$<BOOL:${IOS}>:src/sdl2/SDL_uikit_main.c>
         $<$<NOT:$<BOOL:${SUPPORT_WINDOWS_FRONTEND}>>:src/main.c>
 )
 
