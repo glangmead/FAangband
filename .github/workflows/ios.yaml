@@ -40,3 +40,10 @@ jobs:
         run: |
           cd build
           cpack -G ZIP -C RelWithDebInfo
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: FAngband.ipa
+          path:  build/FAngband.ipa
+          retention-days: 7
