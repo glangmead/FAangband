@@ -25,7 +25,7 @@ jobs:
             -D CMAKE_BUILD_TYPE=RelWithDebInfo \
             -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY='' \
             -D SUPPORT_SDL2_FRONTEND=ON \
-            -D CMAKE_POLICY_VERSION_MINIMUM=3.5 && \
+            -D CMAKE_POLICY_VERSION_MINIMUM=3.5 \
             # EOL
 
       - name: Build
