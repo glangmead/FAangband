@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5...3.26 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.13...3.26 FATAL_ERROR)
 PROJECT(FAngband LANGUAGES C)
 SET(OUR_EXECUTABLE_NAME ${PROJECT_NAME})
 
@@ -69,37 +69,6 @@ IF((NOT SUPPORT_GCU_FRONTEND) AND (NOT SUPPORT_SDL_FRONTEND) AND (NOT SUPPORT_SD
         SET(SUPPORT_X11_FRONTEND ON)
     ENDIF()
 ENDIF()
-
-if(IOS)
-    set(DEPLOYMENT_TARGET "18.5" CACHE STRING "")
-    set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "")
-    add_compile_definitions(USE_SDL2 GAMEDATA_IN_LIB)
-    set(RESOURCES
-            "os/ios/AppIcon.xcassets"
-            "os/ios/Media.xcassets"
-            "lib"
-    )
-
-    target_sources(${OUR_EXECUTABLE_NAME} PUBLIC ${RESOURCES})
-    set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-
-    set_target_properties(${OUR_EXECUTABLE_NAME} PROPERTIES
-            MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/os/ios/Info.plist"
-            XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
-            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "org.rephial.${OUR_EXECUTABLE_NAME}"
-            XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
-    )
-
-    set(MACOSX_BUNDLE_BUNDLE_NAME "${OUR_EXECUTABLE_NAME}")
-    set(MACOSX_BUNDLE_DISPLAY_NAME "${OUR_EXECUTABLE_NAME}")
-
-    install(TARGETS ${OUR_EXECUTABLE_NAME} DESTINATION "Payload")
-
-    set(CPACK_GENERATOR "ZIP")
-    set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
-    set(CPACK_PACKAGE_FILE_NAME "${OUR_EXECUTABLE_NAME}")
-    set(CPACK_ARCHIVE_FILE_EXTENSION "ipa")
-endif()
 
 # Can not have support for SDL and SDL2 at the same time.
 IF (SUPPORT_SDL2_FRONTEND OR SUPPORT_SDL2_SOUND)
@@ -369,6 +338,40 @@ ADD_EXECUTABLE(OurExecutable
         $<$<BOOL:${IOS}>:src/sdl2/SDL_uikit_main.c>
         $<$<NOT:$<BOOL:${SUPPORT_WINDOWS_FRONTEND}>>:src/main.c>
 )
+
+if(IOS)
+    set(DEPLOYMENT_TARGET "18.5" CACHE STRING "")
+    set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "")
+    add_compile_definitions(USE_SDL2 GAMEDATA_IN_LIB)
+    set(RESOURCES
+            "os/ios/AppIcon.xcassets"
+            "os/ios/Media.xcassets"
+            "lib"
+    )
+
+    target_sources(OurExecutable PUBLIC ${RESOURCES})
+    set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+
+    set_target_properties(OurExecutable PROPERTIES
+            MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/os/ios/Info.plist"
+            XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "org.rephial.${OUR_EXECUTABLE_NAME}"
+            XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
+    )
+
+    set(MACOSX_BUNDLE_BUNDLE_NAME "${OUR_EXECUTABLE_NAME}")
+    set(MACOSX_BUNDLE_DISPLAY_NAME "${OUR_EXECUTABLE_NAME}")
+    set(MACOSX_BUNDLE_GUI_IDENTIFIER "org.rephial.${OUR_EXECUTABLE_NAME}")
+
+    install(TARGETS OurExecutable DESTINATION "Payload")
+    if(IOS)
+        set(CPACK_GENERATOR "ZIP")
+        set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
+        set(CPACK_PACKAGE_FILE_NAME "${OUR_EXECUTABLE_NAME}")
+        set(CPACK_ARCHIVE_FILE_EXTENSION "ipa")
+    endif()
+endif()
+
 
 SET_TARGET_PROPERTIES(OurExecutable PROPERTIES
     C_STANDARD 99
@@ -989,3 +992,4 @@ ELSE()
     ADD_CUSTOM_TARGET(allunittests)
 ENDIF()
 ADD_DEPENDENCIES(alltests allunittests)
+

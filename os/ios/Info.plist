@@ -28,6 +28,8 @@
     <string>True</string>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
     <key>UIFileSharingEnabled</key>
     <true/>
     <key>UILaunchScreen</key>

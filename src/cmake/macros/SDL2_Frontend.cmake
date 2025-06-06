@@ -39,6 +39,9 @@ if(IOS)
 
     set(SDL2IMAGE_VENDORED 1)
     set(SDL2IMAGE_BACKEND_IMAGEIO OFF)
+    set(SDL2IMAGE_AVIF OFF)
+    set(SDL2IMAGE_WEBP OFF)
+    set(SDL2IMAGE_TIF OFF)
     FetchContent_Declare(sdl2_image
             GIT_REPOSITORY "https://github.com/libsdl-org/SDL_image"
             GIT_TAG "SDL2"
