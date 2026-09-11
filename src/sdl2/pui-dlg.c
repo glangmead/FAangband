@@ -1321,7 +1321,17 @@ void sdlpui_popdown_dialog(struct sdlpui_dialog *d, struct sdlpui_window *w,
 		}
 		if (parent) {
 			SDL_assert(parent->ftb->set_child);
-			(*parent->ftb->set_child)(parent, NULL);
+			/*
+			 * Only detach if the parent still points at this
+			 * dialog.  A newer child may have replaced it -- the
+			 * menus open a submenu before the old one is popped
+			 * down -- and clearing the link then would orphan
+			 * that newer child, leaving it in the window's list
+			 * with a dangling parent pointer.
+			 */
+			if (sdlpui_get_dialog_child(parent) == d) {
+				(*parent->ftb->set_child)(parent, NULL);
+			}
 
 			/*
 			 * If the parent control has key focus but not mouse
