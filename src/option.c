@@ -288,8 +288,11 @@ bool options_restore_custom(struct player_options *opts, int page)
 #endif
 	path_build(path, sizeof(path), ANGBAND_DIR_USER, file_name);
 	if (!file_exists(path)) {
-		options_restore_maintainer(opts, page);
-		return true;
+		path_build(path, sizeof(path), ANGBAND_DIR_PLATFORM, file_name);
+		if (!file_exists(path)) {
+			options_restore_maintainer(opts, page);
+			return true;
+		}
 	}
 
 	f = file_open(path, MODE_READ, FTYPE_TEXT);
